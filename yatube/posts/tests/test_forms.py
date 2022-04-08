@@ -48,7 +48,7 @@ class PostFormsTests(TestCase):
             'posts:profile',
             kwargs={'username': f'{self.user_1.username}'}
         ))
-        self.assertEqual(Post.objects.count(), post_count +1 )
+        self.assertEqual(Post.objects.count(), post_count + 1)
         self.assertTrue(
             Post.objects.filter(
                 text='test_text',

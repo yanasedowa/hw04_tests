@@ -67,7 +67,7 @@ class PostViewsTests(TestCase):
         first_object = response.context['page_obj'][0]
         post_text = first_object.text
         self.assertEqual(post_text, f'{self.post.text}')
-       
+
     def test_first_page(self):
         response = self.authorized_client.get(reverse('posts:index'))
         self.assertEqual(len(response.context['page_obj']), 10)
