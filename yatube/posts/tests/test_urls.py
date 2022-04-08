@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 
-from posts.models import Group, Post 
+from posts.models import Group, Post
 
 User = get_user_model()
 
@@ -28,7 +28,6 @@ class PostURLTests(TestCase):
         self.user_1 = User.objects.create_user(username='HasNoName')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user_1)
-
 
     def test_home_url_exists_at_desired_location(self):
         """Страница / доступна любому пользователю."""
@@ -68,7 +67,10 @@ class PostURLTests(TestCase):
         """Страница по адресу /posts/<post_id>/edit перенаправит
         не автора на страницу поста.
         """
-        response = self.authorized_client.get(f'/posts/{self.post.pk}/edit/', follow=True)
+        response = self.authorized_client.get(
+            f'/posts/{self.post.pk}/edit/',
+            follow=True
+        )
         self.assertRedirects(
             response, f'/posts/{self.post.pk}/'
         )

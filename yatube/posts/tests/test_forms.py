@@ -21,7 +21,7 @@ class PostFormsTests(TestCase):
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовый пост',
-            )
+        )
         cls.form = PostForm()
 
     def setUp(self):
@@ -34,7 +34,7 @@ class PostFormsTests(TestCase):
 
     def test_create_post(self):
         """Валидная форма создает запись в Post."""
-        post_count = Post.objects.count()  
+        post_count = Post.objects.count()
         form_data = {
             'text': 'test_text',
             'group': self.group.pk,
@@ -44,8 +44,11 @@ class PostFormsTests(TestCase):
             data=form_data,
             follow=True
         )
-        self.assertRedirects(response, reverse('posts:profile', kwargs={'username': f'{self.user_1.username}'}))
-        self.assertEqual(Post.objects.count(), post_count+1)
+        self.assertRedirects(response, reverse(
+            'posts:profile',
+            kwargs={'username': f'{self.user_1.username}'}
+        ))
+        self.assertEqual(Post.objects.count(), post_count +1 )
         self.assertTrue(
             Post.objects.filter(
                 text='test_text',
