@@ -157,7 +157,7 @@ class PostViewsTests(TestCase):
             reverse('posts:group_list', kwargs={'slug': self.group.slug}),
             reverse(
                 'posts:profile',
-                kwargs={'username': self.user.username} + '?page=2'
+                kwargs={'username': self.user.username}
             ),
         )
         for reverse_name in pages_with_args:
