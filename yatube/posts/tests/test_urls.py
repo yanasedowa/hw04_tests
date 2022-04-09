@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
+from http import HTTPStatus
 
 from posts.models import Group, Post
 
@@ -22,43 +23,35 @@ class PostURLTests(TestCase):
         )
 
     def setUp(self):
-        self.guest_client = Client()
         self.authorized_auth_client = Client()
         self.authorized_auth_client.force_login(self.post.author)
         self.user_1 = User.objects.create_user(username='HasNoName')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user_1)
 
-    def test_home_url_exists_at_desired_location(self):
-        """Страница / доступна любому пользователю."""
-        response = self.guest_client.get('/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_group_url_exists_at_desired_location(self):
-        """Страница /group/<slug>/ доступна любому пользователю."""
-        response = self.guest_client.get(f'/group/{self.group.slug}/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_profile_url_exists_at_desired_location(self):
-        """Страница /profile/<username>/ доступна любому пользователю."""
-        response = self.guest_client.get(f'/profile/{self.user.username}/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_posts_id_url_exists_at_desired_location(self):
-        """Страница /posts/<post_id>/ доступна любому пользователю."""
-        response = self.guest_client.get(f'/posts/{self.post.pk}/')
-        self.assertEqual(response.status_code, 200)
+    def test_url_exists_at_desired_location(self):
+        """Страница доступна любому пользователю."""
+        urls = (
+            '/',
+            f'/group/{self.group.slug}/',
+            f'/profile/{self.user.username}/',
+            f'/posts/{self.post.pk}/',
+        )
+        for url in urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_posts_id_url_exists_at_desired_location(self):
         """Страница /unexisting_page/ доступна любому пользователю."""
-        response = self.guest_client.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
+        response = self.client.get('/unexisting_page/')
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
     def test_posts_create_url_redirect_anonymous_on_auth_login(self):
         """Страница по адресу /create/ перенаправит анонимного
         пользователя на страницу логина.
         """
-        response = self.guest_client.get('/create/', follow=True)
+        response = self.client.get('/create/', follow=True)
         self.assertRedirects(
             response, '/auth/login/?next=/create/'
         )

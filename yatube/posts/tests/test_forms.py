@@ -22,10 +22,8 @@ class PostFormsTests(TestCase):
             author=cls.user,
             text='Тестовый пост',
         )
-        cls.form = PostForm()
 
     def setUp(self):
-        self.guest_client = Client()
         self.authorized_auth_client = Client()
         self.authorized_auth_client.force_login(self.post.author)
         self.user_1 = User.objects.create_user(username='HasNoName')
@@ -37,7 +35,7 @@ class PostFormsTests(TestCase):
         post_count = Post.objects.count()
         form_data = {
             'text': 'test_text',
-            'group': self.group.pk,
+            'group': self.group.pk
         }
         response = self.authorized_client.post(
             reverse('posts:post_create'),
@@ -46,14 +44,11 @@ class PostFormsTests(TestCase):
         )
         self.assertRedirects(response, reverse(
             'posts:profile',
-            kwargs={'username': f'{self.user_1.username}'}
+            kwargs={'username': self.user_1.username}
         ))
         self.assertEqual(Post.objects.count(), post_count + 1)
-        self.assertTrue(
-            Post.objects.filter(
-                text='test_text',
-            ).exists()
-        )
+        self.assertEqual(Post.objects.latest('pk').text, form_data['text'])
+        self.assertEqual(Post.objects.latest('pk').group.pk, form_data['group'])
 
     def test_edit_post(self):
         """Проверка формы редактирования поста"""
@@ -64,7 +59,7 @@ class PostFormsTests(TestCase):
         response = self.authorized_auth_client.post(
             reverse(
                 'posts:post_edit',
-                kwargs={'post_id': f'{self.post.pk}'}),
+                kwargs={'post_id': self.post.pk}),
             data=form_data,
             follow=True
         )
@@ -72,10 +67,11 @@ class PostFormsTests(TestCase):
             response,
             reverse(
                 'posts:post_detail',
-                kwargs={'post_id': f'{self.post.pk}'}
+                kwargs={'post_id': self.post.pk}
             ))
         self.assertTrue(
             Post.objects.filter(
-                text='test_text',
+                pk = self.post.pk,
+                text=form_data['text'],
             ).exists()
         )

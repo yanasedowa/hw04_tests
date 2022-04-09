@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -23,7 +24,7 @@ class PostViewsTests(TestCase):
             slug='test-slug_2',
             description='Тестовое описание_2',
         )
-        for i in range(13):
+        for i in range(settings.POSTS_AMOUNT):
             cls.post = Post.objects.create(
                 author=cls.user,
                 text='Тестовый пост',
@@ -31,7 +32,6 @@ class PostViewsTests(TestCase):
             )
 
     def setUp(self):
-        self.guest_client = Client()
         self.authorized_auth_client = Client()
         self.authorized_auth_client.force_login(self.post.author)
         self.user_1 = User.objects.create_user(username='HasNoName')
@@ -61,22 +61,16 @@ class PostViewsTests(TestCase):
                 response = self.authorized_auth_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
 
+    def correct_context(self, response):
+        """Проверка правильного контекста."""
+        first_object = response.context['page_obj'][0]
+        self.assertEqual(first_object.text, self.post.text)
+        self.assertEqual(first_object.pk, self.post.pk)
+
     def test_home_page_show_correct_context(self):
         """Шаблон index сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse('posts:index'))
-        first_object = response.context['page_obj'][0]
-        post_text = first_object.text
-        self.assertEqual(post_text, f'{self.post.text}')
-
-    def test_first_page(self):
-        response = self.authorized_client.get(reverse('posts:index'))
-        self.assertEqual(len(response.context['page_obj']), 10)
-
-    def test_second_page(self):
-        response = self.authorized_client.get(
-            reverse('posts:index') + '?page=2'
-        )
-        self.assertEqual(len(response.context['page_obj']), 3)
+        self.correct_context(response)
 
     def test_group_list_context(self):
         """Шаблон group_list сформирован с правильным контекстом."""
@@ -84,48 +78,17 @@ class PostViewsTests(TestCase):
             reverse('posts:group_list', kwargs={'slug': self.group.slug})
         )
         first_object = response.context['group']
-        group_title = first_object.title
-        group_slug = first_object.slug
-        group_description = first_object.description
-        self.assertEqual(group_title, self.group.title)
-        self.assertEqual(group_slug, self.group.slug)
-        self.assertEqual(group_description, self.group.description)
-
-    def test_first_group_page(self):
-        response = self.authorized_client.get(
-            reverse('posts:group_list', kwargs={'slug': self.group.slug})
-        )
-        self.assertEqual(len(response.context['page_obj']), 10)
-
-    def test_second_group_page(self):
-        response = self.authorized_client.get(
-            reverse('posts:group_list',
-                    kwargs={'slug': self.group.slug}) + '?page=2'
-        )
-        self.assertEqual(len(response.context['page_obj']), 3)
+        self.assertEqual(first_object.title, self.group.title)
+        self.assertEqual(first_object.slug, self.group.slug)
+        self.assertEqual(first_object.description, self.group.description)
 
     def test_profile_context(self):
         """Шаблон profile сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse('posts:profile', kwargs={'username': self.user.username})
         )
-        first_object = response.context['page_obj'][0]
-        post = first_object.text
-        self.assertEqual(post, 'Тестовый пост')
+        self.correct_context(response)
         self.assertEqual(response.context['author'].username, 'auth')
-
-    def test_first_profile_page(self):
-        response = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': self.user.username})
-        )
-        self.assertEqual(len(response.context['page_obj']), 10)
-
-    def test_second_profile_page(self):
-        response = self.authorized_client.get(
-            reverse('posts:profile',
-                    kwargs={'username': self.user.username}) + '?page=2'
-        )
-        self.assertEqual(len(response.context['page_obj']), 3)
 
     def test_post_detail_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
@@ -133,8 +96,7 @@ class PostViewsTests(TestCase):
             reverse('posts:post_detail', kwargs={'post_id': self.post.id})
         )
         first_object = response.context['post']
-        post = first_object.text
-        self.assertEqual(post, 'Тестовый пост')
+        self.assertEqual(first_object.text, self.post.text)
 
     def test_create_post_context(self):
         """Шаблон post_create сформирован с правильным контекстом."""
@@ -175,3 +137,25 @@ class PostViewsTests(TestCase):
         post.group = self.group
         response = self.authorized_client.get(reverse('posts:index'))
         self.assertTrue(post in response.context['page_obj'].object_list)
+
+    def test_first_page(self):
+        pages_with_args = (
+            reverse('posts:index'),
+            reverse('posts:group_list', kwargs={'slug': self.group.slug}),
+            reverse('posts:profile', kwargs={'username': self.user.username}),
+        )
+        for reverse_name in pages_with_args:
+            with self.subTest(reverse_name=reverse_name):
+                response = self.authorized_client.get(reverse_name)
+                self.assertEqual(len(response.context['page_obj']), settings.LAST_TEN)
+
+    def test_second_page(self):
+        pages_with_args = (
+            reverse('posts:index'),
+            reverse('posts:group_list', kwargs={'slug': self.group.slug}),
+            reverse('posts:profile', kwargs={'username': self.user.username}),
+        )
+        for reverse_name in pages_with_args:
+            with self.subTest(reverse_name=reverse_name):
+                response = self.authorized_client.get(reverse_name + '?page=2')
+                self.assertEqual(len(response.context['page_obj']), settings.POSTS_AMOUNT - settings.LAST_TEN)

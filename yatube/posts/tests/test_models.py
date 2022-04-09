@@ -25,8 +25,8 @@ class PostModelTest(TestCase):
         post = PostModelTest.post
         group = PostModelTest.group
         expected_object_name = {
-            'Тестовый пост': post,
-            'Тестовая группа': group,
+            post.text[:15]: post,
+            group.title: group,
         }
         for expected_name, object in expected_object_name.items():
             with self.subTest(object=object):
