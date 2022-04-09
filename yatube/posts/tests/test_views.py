@@ -1,9 +1,8 @@
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 from django.urls import reverse
-
 from posts.models import Group, Post
 
 User = get_user_model()
@@ -147,15 +146,21 @@ class PostViewsTests(TestCase):
         for reverse_name in pages_with_args:
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
-                self.assertEqual(len(response.context['page_obj']), settings.LAST_TEN)
+                self.assertEqual(
+                    len(response.context['page_obj']),
+                    settings.LAST_TEN
+                )
 
     def test_second_page(self):
         pages_with_args = (
             reverse('posts:index'),
             reverse('posts:group_list', kwargs={'slug': self.group.slug}),
-            reverse('posts:profile', kwargs={'username': self.user.username}),
+            reverse('posts:profile', kwargs={'username': self.user.username} + '?page=2'),
         )
         for reverse_name in pages_with_args:
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name + '?page=2')
-                self.assertEqual(len(response.context['page_obj']), settings.POSTS_AMOUNT - settings.LAST_TEN)
+                self.assertEqual(
+                    len(response.context['page_obj']),
+                    settings.POSTS_AMOUNT - settings.LAST_TEN
+                )

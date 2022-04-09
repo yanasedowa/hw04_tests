@@ -1,9 +1,7 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 from django.urls import reverse
-
 from posts.models import Group, Post
-from posts.forms import PostForm
 
 User = get_user_model()
 
@@ -48,7 +46,10 @@ class PostFormsTests(TestCase):
         ))
         self.assertEqual(Post.objects.count(), post_count + 1)
         self.assertEqual(Post.objects.latest('pk').text, form_data['text'])
-        self.assertEqual(Post.objects.latest('pk').group.pk, form_data['group'])
+        self.assertEqual(
+            Post.objects.latest('pk').group.pk,
+            form_data['group']
+        )
 
     def test_edit_post(self):
         """Проверка формы редактирования поста"""
@@ -71,7 +72,7 @@ class PostFormsTests(TestCase):
             ))
         self.assertTrue(
             Post.objects.filter(
-                pk = self.post.pk,
+                pk=self.post.pk,
                 text=form_data['text'],
             ).exists()
         )
