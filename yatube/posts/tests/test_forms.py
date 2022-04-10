@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+
 from posts.models import Group, Post
 
 User = get_user_model()
@@ -44,10 +45,11 @@ class PostFormsTests(TestCase):
             'posts:profile',
             kwargs={'username': self.user_1.username}
         ))
+        post = Post.objects.latest('pk')
         self.assertEqual(Post.objects.count(), post_count + 1)
-        self.assertEqual(Post.objects.latest('pk').text, form_data['text'])
+        self.assertEqual(post.text, form_data['text'])
         self.assertEqual(
-            Post.objects.latest('pk').group.pk,
+            post.group.pk,
             form_data['group']
         )
 
@@ -74,5 +76,6 @@ class PostFormsTests(TestCase):
             Post.objects.filter(
                 pk=self.post.pk,
                 text=form_data['text'],
+                group=self.group.pk,
             ).exists()
         )
